@@ -7,8 +7,8 @@ import java.util.UUID;
 
 public record MatchResultRequest(
         @NotNull UUID matchId,
-        int homeScore,
-        int awayScore,
+        Integer homeScore,
+        Integer awayScore,
         Boolean walkover,
         Integer winnerTeamIndex,
         Integer woWinnerPoints,

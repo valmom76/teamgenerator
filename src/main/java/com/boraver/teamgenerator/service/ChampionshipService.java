@@ -62,8 +62,7 @@ public class ChampionshipService {
         ObjectNode rules = mapper.readValue(teamGen.getRulesJson(), ObjectNode.class);
         if (rules.has("teamGroups")) {
           JsonNode groupsNode = rules.get("teamGroups");
-          for (Iterator<Map.Entry<String, JsonNode>> it = groupsNode.fields(); it.hasNext(); ) {
-            Map.Entry<String, JsonNode> entry = it.next();
+          for (Map.Entry<String, JsonNode> entry : groupsNode.properties()) {
             int teamIndex = Integer.parseInt(entry.getKey());
             int groupId = entry.getValue().asInt();
             teamGroupMap.put(teamIndex, groupId);
@@ -472,13 +471,13 @@ public class ChampionshipService {
       if (request.winnerTeamIndex().equals(match.getHomeTeamIndex())) {
         match.setHomeScore(pointsForWinner);
         match.setAwayScore(0);
-        match.setHomeSetsWon(match.getSetsToWin());   // ← USA O VALOR DA PARTIDA
+        match.setHomeSetsWon(match.getSetsToWin());
         match.setAwaySetsWon(0);
       } else {
         match.setHomeScore(0);
         match.setAwayScore(pointsForWinner);
         match.setHomeSetsWon(0);
-        match.setAwaySetsWon(match.getSetsToWin());   // ← USA O VALOR DA PARTIDA
+        match.setAwaySetsWon(match.getSetsToWin());
       }
       match.setWinnerTeamIndex(request.winnerTeamIndex());
     } else {
@@ -518,19 +517,25 @@ public class ChampionshipService {
         match.setHomeScore(totalHomeScore);
         match.setAwayScore(totalAwayScore);
       } else {
-        // Compatibilidade com versão antiga (sem sets)
-        match.setHomeScore(request.homeScore());
-        match.setAwayScore(request.awayScore());
-        if (request.homeScore() > request.awayScore()) {
-          match.setWinnerTeamIndex(match.getHomeTeamIndex());
-          match.setHomeSetsWon(match.getSetsToWin());
-          match.setAwaySetsWon(0);
-        } else if (request.homeScore() < request.awayScore()) {
-          match.setWinnerTeamIndex(match.getAwayTeamIndex());
-          match.setHomeSetsWon(0);
-          match.setAwaySetsWon(match.getSetsToWin());
+        // Compatibilidade com versão antiga (sem sets detalhados)
+        match.setHomeScore(request.homeScore() != null ? request.homeScore() : 0);
+        match.setAwayScore(request.awayScore() != null ? request.awayScore() : 0);
+
+        if (request.homeScore() != null && request.awayScore() != null) {
+          if (request.homeScore() > request.awayScore()) {
+            match.setWinnerTeamIndex(match.getHomeTeamIndex());
+            match.setHomeSetsWon(match.getSetsToWin());
+            match.setAwaySetsWon(0);
+          } else if (request.homeScore() < request.awayScore()) {
+            match.setWinnerTeamIndex(match.getAwayTeamIndex());
+            match.setHomeSetsWon(0);
+            match.setAwaySetsWon(match.getSetsToWin());
+          } else {
+            match.setWinnerTeamIndex(null);
+            match.setHomeSetsWon(0);
+            match.setAwaySetsWon(0);
+          }
         } else {
-          match.setWinnerTeamIndex(null);
           match.setHomeSetsWon(0);
           match.setAwaySetsWon(0);
         }
@@ -545,7 +550,6 @@ public class ChampionshipService {
       updateStandings(championshipId, match, isWalkover, request.woWinnerPoints());
     }
 
-    // SSE payload enriquecido
     Map<String, Object> update = new HashMap<>();
     update.put("type", "MATCH_RESULT_REGISTERED");
     update.put("matchId", match.getId());
@@ -691,29 +695,59 @@ public class ChampionshipService {
             .mapToInt(ChampionshipMatch::getRound)
             .max().orElse(0) + 1;
 
-    for (int i = 0; i < qualifiedByGroup.size(); i += 2) {
-      if (i + 1 >= qualifiedByGroup.size()) {
-        break;
-      }
-      List<ChampionshipStandings> groupA = qualifiedByGroup.get(i);
-      List<ChampionshipStandings> groupB = qualifiedByGroup.get(i + 1);
+    if (totalQualified == 2) {
+      // Final direta (apenas 2 times)
+      List<ChampionshipStandings> allQualified = qualifiedByGroup.stream()
+              .flatMap(List::stream)
+              .collect(Collectors.toList());
 
-      int qualSize = Math.min(groupA.size(), groupB.size());
-      for (int j = 0; j < qualSize; j++) {
-        ChampionshipStandings home = groupA.get(j);
-        ChampionshipStandings away = groupB.get(qualSize - 1 - j);
+      if (allQualified.size() == 2) {
+        ChampionshipStandings home = allQualified.get(0);
+        ChampionshipStandings away = allQualified.get(1);
 
         ChampionshipMatch match = new ChampionshipMatch();
         match.setChampionshipId(championshipId);
-        match.setStage(firstStage);
-        match.setRound(round++);
+        match.setStage(firstStage); // "FINAL"
+        match.setRound(round);
         match.setHomeTeamIndex(home.getTeamIndex());
         match.setAwayTeamIndex(away.getTeamIndex());
         match.setStatus("pending");
+
+        // Herda configurações do campeonato
         match.setSetsToWin(championship.getDefaultSetsToWin());
         match.setPointsPerSet(championship.getDefaultPointsPerSet());
         match.setTieBreakPoints(championship.getDefaultTieBreakPoints());
+
         knockoutMatches.add(match);
+      }
+    } else {
+      // Chaveamento normal (4, 8, 16... times)
+      for (int i = 0; i < qualifiedByGroup.size(); i += 2) {
+        if (i + 1 >= qualifiedByGroup.size()) break;
+
+        List<ChampionshipStandings> groupA = qualifiedByGroup.get(i);
+        List<ChampionshipStandings> groupB = qualifiedByGroup.get(i + 1);
+
+        int qualSize = Math.min(groupA.size(), groupB.size());
+        for (int j = 0; j < qualSize; j++) {
+          ChampionshipStandings home = groupA.get(j);
+          ChampionshipStandings away = groupB.get(qualSize - 1 - j);
+
+          ChampionshipMatch match = new ChampionshipMatch();
+          match.setChampionshipId(championshipId);
+          match.setStage(firstStage);
+          match.setRound(round++);
+          match.setHomeTeamIndex(home.getTeamIndex());
+          match.setAwayTeamIndex(away.getTeamIndex());
+          match.setStatus("pending");
+
+          // Herda configurações do campeonato
+          match.setSetsToWin(championship.getDefaultSetsToWin());
+          match.setPointsPerSet(championship.getDefaultPointsPerSet());
+          match.setTieBreakPoints(championship.getDefaultTieBreakPoints());
+
+          knockoutMatches.add(match);
+        }
       }
     }
 

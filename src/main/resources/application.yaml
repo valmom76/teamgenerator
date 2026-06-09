@@ -39,6 +39,9 @@ spring:
           starttls:
             enable: true
             required: true
+  jackson:
+    deserialization:
+      fail-on-null-for-primitives: false
 logging:
   level:
     com.zaxxer.hikari: ERROR
