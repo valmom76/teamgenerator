@@ -52,3 +52,4 @@ app:
   security:
     jwt-secret: 8782028c-93e4-4664-97b1-c1a3c1780032
     jwt-expiration-ms: 86400000
+  upload-dir: ${APP_UPLOAD_DIR:/app/uploads}
