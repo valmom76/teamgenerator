@@ -6,4 +6,5 @@ import java.util.*;
 
 public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
   Optional<AppUser> findByTenantIdAndEmail(UUID tenantId, String email);
+  Optional<AppUser> findByEmailVerificationToken(String token);
 }

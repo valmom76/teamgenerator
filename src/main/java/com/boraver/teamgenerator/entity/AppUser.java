@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -45,4 +46,13 @@ public class AppUser {
 
   @Column(name="created_at", nullable=false)
   private OffsetDateTime createdAt = OffsetDateTime.now();
+
+  @Column(name = "email_verified", nullable = false)
+  private boolean emailVerified = false;
+
+  @Column(name = "email_verification_token", length = 36)
+  private String emailVerificationToken;
+
+  @Column(name = "email_verification_token_expiry")
+  private LocalDateTime emailVerificationTokenExpiry;
 }
