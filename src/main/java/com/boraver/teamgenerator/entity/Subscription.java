@@ -14,6 +14,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class Subscription {
+
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   @JdbcTypeCode(SqlTypes.CHAR)
@@ -24,12 +25,13 @@ public class Subscription {
   @JdbcTypeCode(SqlTypes.CHAR)
   private UUID tenantId;
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "plan_id", nullable = false)
   private Plan plan;
 
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private String status = "ACTIVE"; // ACTIVE, CANCELLED, EXPIRED
+  private SubscriptionStatus status = SubscriptionStatus.PENDING;
 
   @Column(name = "start_date", nullable = false)
   private LocalDate startDate;
@@ -37,29 +39,16 @@ public class Subscription {
   @Column(name = "end_date")
   private LocalDate endDate;
 
+  @Column(name = "asaas_subscription_id", length = 255)
+  private String asaasSubscriptionId;
+
+  @Column(name = "asaas_customer_id", length = 255)
+  private String asaasCustomerId;
+
   @Column(name = "stripe_subscription_id", length = 255)
   private String stripeSubscriptionId;
 
-  /**
-   * Verifica se a assinatura está ativa
-   */
-  public boolean isActive() {
-    return "ACTIVE".equals(status) &&
-            (endDate == null || !endDate.isBefore(LocalDate.now()));
-  }
-
-  /**
-   * Cancela a assinatura
-   */
-  public void cancel() {
-    this.status = "CANCELLED";
-    this.endDate = LocalDate.now();
-  }
-
-  /**
-   * Expira a assinatura (chamado por jobs agendados)
-   */
-  public void expire() {
-    this.status = "EXPIRED";
+  public enum SubscriptionStatus {
+    PENDING, ACTIVE, SUSPENDED, CANCELLED
   }
 }

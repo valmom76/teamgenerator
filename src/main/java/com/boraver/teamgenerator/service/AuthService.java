@@ -82,7 +82,7 @@ public class AuthService {
     Subscription sub = new Subscription();
     sub.setTenantId(t.getId());
     sub.setPlan(freePlan);
-    sub.setStatus("ACTIVE");
+    sub.setStatus(Subscription.SubscriptionStatus.ACTIVE);
     sub.setStartDate(LocalDate.now());
     subscriptionRepository.save(sub);
 

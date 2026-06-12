@@ -53,3 +53,7 @@ app:
     jwt-secret: 8782028c-93e4-4664-97b1-c1a3c1780032
     jwt-expiration-ms: 86400000
   upload-dir: ${APP_UPLOAD_DIR:/app/uploads}
+asaas:
+  api-key: ${ASAAS_API_KEY}
+  environment: sandbox   # production
+  webhook-secret: ${WEBHOOK_SECRET}
