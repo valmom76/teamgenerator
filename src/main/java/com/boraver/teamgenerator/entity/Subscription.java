@@ -21,9 +21,9 @@ public class Subscription {
   @Column(length = 36)
   private UUID id;
 
-  @Column(name = "tenant_id", nullable = false)
-  @JdbcTypeCode(SqlTypes.CHAR)
-  private UUID tenantId;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "tenant_id", nullable = false)
+  private Tenant tenant;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "plan_id", nullable = false)

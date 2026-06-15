@@ -35,6 +35,9 @@ public class AppUser {
   @Column(nullable=false, length=180)
   private String email;
 
+  @Column(name = "cpf_cnpj")
+  private String cpfCnpj;
+
   @Column(name="password_hash", nullable=false, length=255)
   private String passwordHash;
 

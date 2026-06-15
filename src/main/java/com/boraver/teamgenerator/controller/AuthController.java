@@ -97,7 +97,8 @@ public class AuthController {
             result.secondaryColor(),
             result.planName(),
             result.features(),
-            result.emailVerified()
+            result.emailVerified(),
+            result.groupName()
     );
   }
 }

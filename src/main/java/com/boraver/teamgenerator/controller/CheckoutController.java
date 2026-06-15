@@ -3,10 +3,8 @@ package com.boraver.teamgenerator.controller;
 import com.boraver.teamgenerator.dto.subscription.CheckoutResponseDTO;
 import com.boraver.teamgenerator.dto.subscription.SubscribeRequestDTO;
 import com.boraver.teamgenerator.dto.subscription.SubscriptionStatusDTO;
-import com.boraver.teamgenerator.entity.AppUser;
 import com.boraver.teamgenerator.service.SubscriptionService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,10 +18,13 @@ public class CheckoutController {
   }
 
   @PostMapping("/subscribe")
-  public ResponseEntity<CheckoutResponseDTO> subscribe(
-    @RequestBody SubscribeRequestDTO request,
-    @AuthenticationPrincipal AppUser currentUser) {
-    return ResponseEntity.ok(subscriptionService.subscribe(request, currentUser));
+  public ResponseEntity<CheckoutResponseDTO> subscribe(@RequestBody SubscribeRequestDTO request) {
+    return ResponseEntity.ok(subscriptionService.subscribe(request));
+  }
+
+  @PostMapping("/downgrade")
+  public ResponseEntity<CheckoutResponseDTO> downgrade(@RequestBody SubscribeRequestDTO request) {
+    return ResponseEntity.ok(subscriptionService.downgrade(request));
   }
 
   @GetMapping("/status")

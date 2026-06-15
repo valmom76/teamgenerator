@@ -54,6 +54,6 @@ app:
     jwt-expiration-ms: 86400000
   upload-dir: ${APP_UPLOAD_DIR:/app/uploads}
 asaas:
-  api-key: ${ASAAS_API_KEY}
+  api-key: $aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjNiMjhhYzA1LTAyMzItNDMxNS05ZjcwLTE2YTIxNDZmMzU3Mzo6JGFhY2hfNjJiMmUyMmItYzdmNi00YzA5LWFjZWUtNjI3MzNkYjkzMzdh
   environment: sandbox   # production
   webhook-secret: ${WEBHOOK_SECRET}

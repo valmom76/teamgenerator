@@ -1,5 +1,7 @@
 package com.boraver.teamgenerator.config;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
+@Getter
+@Setter
 public class AsaasClientConfig {
 
   @Value("${asaas.api-key}")

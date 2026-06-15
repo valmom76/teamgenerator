@@ -13,5 +13,6 @@ public record AuthResponse(
         String secondaryColor,
         String planName,
         List<String> features,
-        boolean emailVerified
+        boolean emailVerified,
+        String groupName
 ) {}

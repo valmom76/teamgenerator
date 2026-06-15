@@ -13,7 +13,7 @@ public interface PlanRepository extends JpaRepository<Plan, UUID> {
 
   Optional<Plan> findByName(String name);
 
-  List<Plan> findAllByActiveTrue();
+  List<Plan> findByActiveTrue();
 
   @Query("SELECT p FROM Plan p WHERE p.active = true AND p.name = :name")
   Optional<Plan> findActiveByName(@Param("name") String name);

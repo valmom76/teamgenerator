@@ -80,7 +80,7 @@ public class AuthService {
     Plan freePlan = planRepository.findByName("Free")
             .orElseThrow(() -> new IllegalStateException("Plano Free não encontrado"));
     Subscription sub = new Subscription();
-    sub.setTenantId(t.getId());
+    sub.setTenant(t);
     sub.setPlan(freePlan);
     sub.setStatus(Subscription.SubscriptionStatus.ACTIVE);
     sub.setStartDate(LocalDate.now());
@@ -128,7 +128,7 @@ public class AuthService {
     Tenant tenant = tenantRepo.findById(tenantId)
             .orElseThrow(() -> new IllegalStateException("Tenant não encontrado"));
 
-    Plan plan = subscriptionRepository.findByTenantIdAndStatus(tenantId, "ACTIVE")
+    Plan plan = subscriptionRepository.findByTenantIdAndStatus(tenantId, Subscription.SubscriptionStatus.ACTIVE)
             .map(Subscription::getPlan)
             .orElse(null);
 
@@ -185,7 +185,8 @@ public class AuthService {
             tenant.getSecondaryColor(),
             plan != null ? plan.getName() : "Free",
             plan != null ? plan.getFeatureList() : java.util.Collections.emptyList(),
-            user.isEmailVerified()
+            user.isEmailVerified(),
+            tenant.getName()
     );
   }
 
@@ -211,6 +212,7 @@ public class AuthService {
           String secondaryColor,
           String planName,
           java.util.List<String> features,
-          boolean emailVerified
+          boolean emailVerified,
+          String groupName
   ) {}
 }

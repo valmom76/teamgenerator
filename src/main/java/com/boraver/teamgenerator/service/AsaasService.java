@@ -1,12 +1,11 @@
 package com.boraver.teamgenerator.service;
 
+import com.boraver.teamgenerator.common.TenantContext;
 import com.boraver.teamgenerator.config.AsaasClientConfig;
 import com.boraver.teamgenerator.entity.AppUser;
 import com.boraver.teamgenerator.entity.Plan;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -20,33 +19,56 @@ public class AsaasService {
   private final AsaasClientConfig config;
 
   private static final ParameterizedTypeReference<Map<String, Object>> MAP_TYPE_REF =
-    new ParameterizedTypeReference<>() {};
+          new ParameterizedTypeReference<>() {};
 
   public AsaasService(RestTemplate asaasRestTemplate, AsaasClientConfig config) {
     this.asaasRestTemplate = asaasRestTemplate;
     this.config = config;
   }
 
-  public String getOrCreateCustomer(AppUser adminUser) {
-    String email = adminUser.getEmail();
-    String url = config.getBaseUrl() + "/customers?email=" + email;
+  private HttpHeaders getHeaders() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("access_token", config.getApiKey());
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return headers;
+  }
 
-    ResponseEntity<Map<String, Object>> resp = asaasRestTemplate.exchange(
-      url, HttpMethod.GET, null, MAP_TYPE_REF);
-    List<Map<String, Object>> data = getDataList(resp.getBody());
-    if (!data.isEmpty()) {
-      return extractString(data.get(0), "id");
+  public String getOrCreateCustomer(AppUser adminUser) {
+    String tenantId = TenantContext.getTenantId();
+    String url = config.getBaseUrl() + "/customers?externalReference=" + tenantId;
+
+    System.out.println("=== DEBUG ASAAS ===");
+    System.out.println("API Key: " + config.getApiKey());
+    System.out.println("Base URL: " + config.getBaseUrl());
+    System.out.println("Headers: " + getHeaders());
+
+    System.out.println("URL GET: " + url);
+
+    try {
+      ResponseEntity<Map<String, Object>> resp = asaasRestTemplate.exchange(
+              url, HttpMethod.GET, new HttpEntity<>(getHeaders()), MAP_TYPE_REF);
+      List<Map<String, Object>> data = getDataList(resp.getBody());
+      if (!data.isEmpty()) {
+        return extractString(data.get(0), "id");
+      }
+    } catch (Exception e) {
+      System.out.println("Cliente não encontrado, criando novo...");
     }
 
+    // Cria novo cliente
     Map<String, Object> body = new HashMap<>();
     body.put("name", adminUser.getName());
-    body.put("email", email);
+    body.put("email", adminUser.getEmail());
+    body.put("cpfCnpj", adminUser.getCpfCnpj());
+    body.put("externalReference", tenantId);
+
+    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, getHeaders());
 
     ResponseEntity<Map<String, Object>> postResp = asaasRestTemplate.exchange(
-      config.getBaseUrl() + "/customers",
-      HttpMethod.POST,
-      new HttpEntity<>(body),
-      MAP_TYPE_REF);
+            config.getBaseUrl() + "/customers",
+            HttpMethod.POST,
+            requestEntity,
+            MAP_TYPE_REF);
     return extractString(postResp.getBody(), "id");
   }
 
@@ -60,25 +82,41 @@ public class AsaasService {
     body.put("description", "Plano " + plan.getName());
     body.put("externalReference", tenantId.toString());
 
+    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, getHeaders());
+
     ResponseEntity<Map<String, Object>> resp = asaasRestTemplate.exchange(
-      config.getBaseUrl() + "/subscriptions",
-      HttpMethod.POST,
-      new HttpEntity<>(body),
-      MAP_TYPE_REF);
+            config.getBaseUrl() + "/subscriptions",
+            HttpMethod.POST,
+            requestEntity,
+            MAP_TYPE_REF);
     return resp.getBody();
   }
 
   public Map<String, Object> getPaymentDetails(String paymentId) {
     ResponseEntity<Map<String, Object>> resp = asaasRestTemplate.exchange(
-      config.getBaseUrl() + "/payments/" + paymentId,
-      HttpMethod.GET,
-      null,
-      MAP_TYPE_REF);
+            config.getBaseUrl() + "/payments/" + paymentId,
+            HttpMethod.GET,
+            new HttpEntity<>(getHeaders()),
+            MAP_TYPE_REF);
     return resp.getBody();
   }
 
-  // ─── Métodos auxiliares ───
+  public void cancelSubscription(String subscriptionId) {
+    if (subscriptionId == null || subscriptionId.isBlank()) return;
 
+    Map<String, Object> body = new HashMap<>();
+    body.put("status", "INACTIVE");
+
+    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, getHeaders());
+
+    asaasRestTemplate.exchange(
+            config.getBaseUrl() + "/subscriptions/" + subscriptionId,
+            HttpMethod.PUT,
+            requestEntity,
+            MAP_TYPE_REF);
+  }
+
+  // Métodos auxiliares
   @SuppressWarnings("unchecked")
   private List<Map<String, Object>> getDataList(Map<String, Object> body) {
     if (body == null) return Collections.emptyList();
