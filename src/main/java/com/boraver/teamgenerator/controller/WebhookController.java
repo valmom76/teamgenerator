@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/webhooks")
+@RequestMapping("/webhooks")
 public class WebhookController {
 
   private final WebhookService webhookService;

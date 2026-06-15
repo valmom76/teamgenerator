@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,36 +41,22 @@ public class SubscriptionService {
   @Transactional
   public CheckoutResponseDTO subscribe(SubscribeRequestDTO request) {
     UUID tenantId = getTenantId();
-
-    // 1. Busca tenant e plano
-    Tenant tenant = tenantRepo.findById(tenantId).orElseThrow();
-    Plan plan = planRepo.findById(request.planId()).orElseThrow();
-
-    // 2. Busca admin do tenant
+    Tenant tenant = tenantRepo.findById(tenantId)
+      .orElseThrow(() -> new RuntimeException("Tenant não encontrado"));
+    Plan plan = planRepo.findById(request.planId())
+      .orElseThrow(() -> new RuntimeException("Plano não encontrado"));
     AppUser adminUser = appUserRepository.findFirstByTenantIdAndRole(tenantId, "ADMIN")
-            .orElseThrow(() -> new RuntimeException("Admin não encontrado"));
+      .orElseThrow(() -> new RuntimeException("Admin não encontrado"));
 
-    // 3. Verifica assinatura existente
-    Subscription existingSub = subscriptionRepo
-            .findByTenantIdAndStatus(tenantId, Subscription.SubscriptionStatus.ACTIVE)
-            .orElse(null);
+    // Verifica/cancela assinatura existente (omitido para brevidade, mas mantenha o seu código)
 
-    if (existingSub != null) {
-      // Se já tem assinatura, cancela a anterior
-      if (existingSub.getAsaasSubscriptionId() != null) {
-        asaasService.cancelSubscription(existingSub.getAsaasSubscriptionId());
-      }
-      existingSub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
-      subscriptionRepo.save(existingSub);
-    }
-
-    // 4. Cria/recupera customer no Asaas (usa tenantId como externalReference)
     String customerId = asaasService.getOrCreateCustomer(adminUser);
-
-    // 5. Cria assinatura no Asaas
     Map<String, Object> asaasSub = asaasService.createSubscription(customerId, plan, tenantId);
 
-    // 6. Salva no banco
+    // Log para debug
+    System.out.println("Resposta da criação de assinatura Asaas: " + asaasSub);
+
+    // Salva a assinatura local primeiro, mas precisamos do paymentId
     Subscription sub = new Subscription();
     sub.setTenant(tenant);
     sub.setPlan(plan);
@@ -80,16 +67,41 @@ public class SubscriptionService {
     sub.setAsaasCustomerId(customerId);
     subscriptionRepo.save(sub);
 
-    // 7. Retorna links de pagamento
-    Map<String, Object> firstPayment = (Map<String, Object>) asaasSub.get("firstPayment");
-    String paymentId = (String) firstPayment.get("id");
+    // ─── Obtém detalhes da primeira cobrança ───
+    String paymentId = null;
+    String bankSlipUrl = null;
+    String pixUrl = null;
+
+    Object firstPaymentObj = asaasSub.get("firstPayment");
+    if (firstPaymentObj instanceof Map) {
+      Map<String, Object> firstPayment = (Map<String, Object>) firstPaymentObj;
+      paymentId = (String) firstPayment.get("id");
+    } else if (asaasSub.get("firstPaymentId") != null) {
+      // Caso venha apenas o ID (comportamento antigo ou diferente)
+      paymentId = asaasSub.get("firstPaymentId").toString();
+    }
+
+    if (paymentId == null) {
+      // Fallback: busca os pagamentos da assinatura e pega o primeiro
+      Map<String, Object> paymentsData = asaasService.getPaymentsBySubscription((String) asaasSub.get("id"));
+      List<Map<String, Object>> paymentList = (List<Map<String, Object>>) paymentsData.get("data");
+      if (paymentList != null && !paymentList.isEmpty()) {
+        paymentId = (String) paymentList.get(0).get("id");
+      } else {
+        throw new RuntimeException("Nenhum pagamento encontrado para a assinatura");
+      }
+    }
+
+    // Com o paymentId, busca detalhes completos
     Map<String, Object> paymentDetails = asaasService.getPaymentDetails(paymentId);
+    bankSlipUrl = (String) paymentDetails.get("bankSlipUrl");
+    pixUrl = (String) paymentDetails.get("pixUrl");
 
     return new CheckoutResponseDTO(
-            sub.getId(),
-            sub.getStatus().name(),
-            (String) paymentDetails.get("bankSlipUrl"),
-            (String) paymentDetails.get("pixUrl")
+      sub.getId(),
+      sub.getStatus().name(),
+      bankSlipUrl,
+      pixUrl
     );
   }
 

@@ -37,13 +37,6 @@ public class AsaasService {
     String tenantId = TenantContext.getTenantId();
     String url = config.getBaseUrl() + "/customers?externalReference=" + tenantId;
 
-    System.out.println("=== DEBUG ASAAS ===");
-    System.out.println("API Key: " + config.getApiKey());
-    System.out.println("Base URL: " + config.getBaseUrl());
-    System.out.println("Headers: " + getHeaders());
-
-    System.out.println("URL GET: " + url);
-
     try {
       ResponseEntity<Map<String, Object>> resp = asaasRestTemplate.exchange(
               url, HttpMethod.GET, new HttpEntity<>(getHeaders()), MAP_TYPE_REF);
@@ -59,7 +52,7 @@ public class AsaasService {
     Map<String, Object> body = new HashMap<>();
     body.put("name", adminUser.getName());
     body.put("email", adminUser.getEmail());
-    body.put("cpfCnpj", adminUser.getCpfCnpj());
+    body.put("cpfCnpj", getCpfCnpj(adminUser));
     body.put("externalReference", tenantId);
 
     HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, getHeaders());
@@ -116,6 +109,15 @@ public class AsaasService {
             MAP_TYPE_REF);
   }
 
+  public Map<String, Object> getPaymentsBySubscription(String subscriptionId) {
+    ResponseEntity<Map<String, Object>> resp = asaasRestTemplate.exchange(
+      config.getBaseUrl() + "/subscriptions/" + subscriptionId + "/payments",
+      HttpMethod.GET,
+      new HttpEntity<>(getHeaders()),
+      MAP_TYPE_REF);
+    return resp.getBody();
+  }
+
   // Métodos auxiliares
   @SuppressWarnings("unchecked")
   private List<Map<String, Object>> getDataList(Map<String, Object> body) {
@@ -136,5 +138,16 @@ public class AsaasService {
       throw new IllegalStateException("Campo '" + key + "' não encontrado na resposta Asaas");
     }
     return value.toString();
+  }
+
+  private String getCpfCnpj(AppUser user) {
+    if (user.getCpfCnpj() != null && !user.getCpfCnpj().isBlank()) {
+      return user.getCpfCnpj();
+    }
+    // Fallback para sandbox
+    if ("sandbox".equals(config.getEnvironment())) {
+      return "24971563792"; // CPF de teste
+    }
+    throw new RuntimeException("CPF/CNPJ é obrigatório para assinatura");
   }
 }
