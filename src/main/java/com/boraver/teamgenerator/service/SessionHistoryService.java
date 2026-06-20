@@ -20,15 +20,18 @@ public class SessionHistoryService {
     UUID tenantId = UUID.fromString(TenantContext.getTenantId());
     List<TeamGenerationSession> sessions = sessionRepo.findByTenantIdOrderByCreatedAtDesc(tenantId);
 
-    return sessions.stream().map(session -> new SessionSummaryDTO(
-            session.getId().toString(),
-            session.getCreatedAt().toString(),
-            session.getMode(),
-            session.getTeamCount(),
-            session.getPlayersPerTeam(),
-            session.getPlayersCount(),
-            session.getSourceFileName()
-    )).collect(Collectors.toList());
+    return sessions.stream()
+            .filter(s -> "DB".equals(s.getMode()) || "POTS".equals(s.getMode()))  // ← filtro
+            .map(session -> new SessionSummaryDTO(
+                    session.getId().toString(),
+                    session.getCreatedAt().toString(),
+                    session.getMode(),
+                    session.getTeamCount(),
+                    session.getPlayersPerTeam(),
+                    session.getPlayersCount(),
+                    session.getSourceFileName()
+            ))
+            .collect(Collectors.toList());
   }
 
   public SessionDetailDTO getSessionDetail(UUID sessionId) {
