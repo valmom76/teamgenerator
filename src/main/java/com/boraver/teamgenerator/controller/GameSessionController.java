@@ -59,8 +59,15 @@ public class GameSessionController {
           @Valid @RequestBody StartWithCourtsRequest request,
           Authentication auth) {
     UUID tenantId = UUID.fromString(TenantContext.getTenantId());
-    teamGenerationService.startSessionWithCourts(tenantId,
-            request.generationSessionId(), request.courts());
+    teamGenerationService.startSessionWithCourts(
+            tenantId,
+            request.generationSessionId(),
+            request.courts(),
+            request.pointsPerSet(),
+            request.setsToWin(),
+            request.sessionDate(),
+            request.sessionTime()
+    );
     return ResponseEntity.ok(Map.of("sessionId", request.generationSessionId()));
   }
 

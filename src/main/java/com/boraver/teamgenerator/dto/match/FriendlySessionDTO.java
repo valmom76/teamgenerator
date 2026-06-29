@@ -8,7 +8,9 @@ public record FriendlySessionDTO(
         String dateFormatted,
         List<CourtDTO> courts,
         int pointsPerSet,
-        int setsToWin
+        int setsToWin,
+        String sessionDate,
+        String sessionTime
 ) {
   public record CourtDTO(
           String name,

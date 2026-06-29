@@ -55,14 +55,21 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     var config = new org.springframework.web.cors.CorsConfiguration();
     config.setAllowedOrigins(java.util.List.of(
+            // Produção
             "https://teamrandomizer-one.vercel.app",
-            "http://localhost:5173",
-            "http://localhost:3000",
-            "http://23.106.44.62:3000",
             "https://rando.esp.br",
             "https://www.rando.esp.br",
             "http://rando.esp.br",
-            "http://www.rando.esp.br"
+            "http://www.rando.esp.br",
+            // VPS
+            "http://23.106.44.62:3000",
+            // Dev local
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://localhost:8081",       // ← Expo Web
+            // Rede local (celular)
+            "http://192.168.0.26:8081",    // ← Expo no seu IP atual
+            "exp://192.168.0.26:8081"      // ← Expo Go
     ));
     config.setAllowedMethods(java.util.List.of(
             "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"

@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -491,17 +492,45 @@ public class TeamGenerationService {
   }
 
   @Transactional
-  public TeamGenerationSession startSessionWithCourts(UUID tenantId, UUID sessionId,
-                                                      List<StartWithCourtsRequest.CourtAssignment> courts) {
+  public TeamGenerationSession startSessionWithCourts(
+          UUID tenantId,
+          UUID sessionId,
+          List<StartWithCourtsRequest.CourtAssignment> courts,
+          int pointsPerSet,
+          int setsToWin,
+          String sessionDate,
+          String sessionTime
+  ) {
     TeamGenerationSession session = sessionRepository.findById(sessionId)
             .orElseThrow(() -> new IllegalArgumentException("Sessão não encontrada"));
     if (!session.getTenantId().equals(tenantId)) {
       throw new SecurityException("Acesso negado");
     }
 
-    // Serializa as quadras no rulesJson (ou em um campo dedicado se existir)
     ObjectNode rules = mapper.createObjectNode();
     rules.put("mode", "avulso");
+    rules.put("pointsPerSet", pointsPerSet);
+    rules.put("setsToWin", setsToWin);
+
+    // Salva data e hora no campo playDate
+    if (sessionDate != null && !sessionDate.isBlank() && sessionTime != null && !sessionTime.isBlank()) {
+      try {
+        // Faz o parsing da data/hora no fuso de Fortaleza
+        String dateTimeStr = sessionDate + "T" + sessionTime + ":00";
+        java.time.LocalDateTime localDateTime = java.time.LocalDateTime.parse(dateTimeStr);
+        java.time.ZoneId zoneId = java.time.ZoneId.of("America/Fortaleza");
+
+        // Converte para UTC antes de salvar
+        OffsetDateTime playDate = localDateTime.atZone(zoneId)
+                .withZoneSameInstant(java.time.ZoneOffset.UTC)
+                .toOffsetDateTime();
+
+        session.setPlayDate(playDate);
+      } catch (Exception e) {
+        // Log
+      }
+    }
+
     ArrayNode courtsArray = rules.putArray("courts");
     for (var court : courts) {
       ObjectNode courtNode = courtsArray.addObject();

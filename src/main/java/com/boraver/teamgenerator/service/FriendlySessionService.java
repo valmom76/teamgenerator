@@ -48,7 +48,18 @@ public class FriendlySessionService {
     }
 
     JsonNode rules = parseRules(session.getRulesJson());
+
     String date = session.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+    String sessionDate = null;
+    String sessionTime = null;
+
+    if (session.getPlayDate() != null) {
+      java.time.ZoneId zoneId = java.time.ZoneId.of("America/Fortaleza");
+      java.time.ZonedDateTime localDateTime = session.getPlayDate().atZoneSameInstant(zoneId);
+      sessionDate = localDateTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+      sessionTime = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+    }
 
     // Busca TODAS as partidas da sessão
     List<FriendlyMatch> allMatches = friendlyMatchRepository.findBySessionIdOrderByCreatedAt(sessionId);
@@ -57,12 +68,13 @@ public class FriendlySessionService {
     Map<String, List<FriendlyMatch>> matchesByCourt = allMatches.stream()
             .collect(Collectors.groupingBy(FriendlyMatch::getCourtName));
 
+    // Agora passa o terceiro argumento
     List<FriendlySessionDTO.CourtDTO> courts = buildCourtList(session.getId(), rules, matchesByCourt);
 
     int pointsPerSet = rules.has("pointsPerSet") ? rules.get("pointsPerSet").asInt() : 12;
     int setsToWin = rules.has("setsToWin") ? rules.get("setsToWin").asInt() : 1;
 
-    return new FriendlySessionDTO(sessionId, date, courts, pointsPerSet, setsToWin);
+    return new FriendlySessionDTO(sessionId, date, courts, pointsPerSet, setsToWin, sessionDate, sessionTime);
   }
 
   @Transactional

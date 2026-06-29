@@ -1,6 +1,5 @@
 package com.boraver.teamgenerator.dto.skill;
 
-public record UpdateSkillRequest(
-    String name,
-    Boolean active
-) {}
+import jakarta.annotation.Nullable;
+
+public record UpdateSkillRequest(@Nullable String name, @Nullable Boolean active) {}

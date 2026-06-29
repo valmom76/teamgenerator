@@ -48,8 +48,8 @@ public class TeamGenerationSession {
   @Column(name="rules_json", nullable=false, columnDefinition="json")
   private String rulesJson;
 
-  @Column(name="source_file_name")
-  private String sourceFileName;
+  @Column(name = "play_date")
+  private OffsetDateTime playDate;
 
   @ManyToOne
   @JoinColumn(name = "session_id")

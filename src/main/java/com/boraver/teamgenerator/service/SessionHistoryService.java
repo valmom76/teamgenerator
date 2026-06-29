@@ -29,7 +29,7 @@ public class SessionHistoryService {
                     session.getTeamCount(),
                     session.getPlayersPerTeam(),
                     session.getPlayersCount(),
-                    session.getSourceFileName()
+                    session.getPlayDate() != null ? session.getPlayDate().toString() : null
             ))
             .collect(Collectors.toList());
   }
@@ -62,7 +62,7 @@ public class SessionHistoryService {
           int teamCount,
           int playersPerTeam,
           int playersCount,
-          String sourceFileName
+          String playDate
   ) {}
 
   public record SessionDetailDTO(
