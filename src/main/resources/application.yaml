@@ -39,6 +39,7 @@ spring:
           starttls:
             enable: true
             required: true
+          from: noreply@rando.esp.br
   jackson:
     deserialization:
       fail-on-null-for-primitives: false

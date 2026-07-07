@@ -3,6 +3,7 @@ package com.boraver.teamgenerator.controller;
 import com.boraver.teamgenerator.dto.auth.*;
 import com.boraver.teamgenerator.dto.email.VerifyEmailRequest;
 import com.boraver.teamgenerator.service.AuthService;
+import com.boraver.teamgenerator.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,6 +22,7 @@ import java.util.UUID;
 public class AuthController {
 
   private final AuthService authService;
+  private final PasswordResetService passwordResetService;
 
   @PostMapping("/register-tenant")
   @Operation(summary = "Registrar novo grupo com administrador")
@@ -81,6 +83,18 @@ public class AuthController {
   public ResponseEntity<String> verifyEmailAndSetPassword(@Valid @RequestBody VerifyEmailRequest req) {
     authService.verifyEmailAndSetPassword(req.token(), req.password());
     return ResponseEntity.ok("E‑mail verificado com sucesso! Você já pode fechar esta página e fazer login.");
+  }
+
+  @PostMapping("/forgot-password")
+  public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+    passwordResetService.requestPasswordReset(request.email());
+    return ResponseEntity.ok("E-mail de recuperação enviado");
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+    passwordResetService.resetPassword(request.token(), request.password());
+    return ResponseEntity.ok("Senha alterada com sucesso");
   }
 
   // ==================== Método auxiliar ====================
