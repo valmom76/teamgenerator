@@ -993,11 +993,11 @@ public class ChampionshipService {
     } else {
       if (match.getHomeScore() > match.getAwayScore()) {
         homePoints = 3;
-        awayPoints = 1;
+        awayPoints = 0;
         homeStanding.setWins(homeStanding.getWins() + 1);
         awayStanding.setLosses(awayStanding.getLosses() + 1);
       } else if (match.getHomeScore() < match.getAwayScore()) {
-        homePoints = 1;
+        homePoints = 0;
         awayPoints = 3;
         homeStanding.setLosses(homeStanding.getLosses() + 1);
         awayStanding.setWins(awayStanding.getWins() + 1);
@@ -1222,7 +1222,8 @@ public class ChampionshipService {
             c.getId(), c.getName(), c.getCreatedAt(), c.getStartedAt(), c.getEndedAt(),
             c.getTeamCount(), c.getFormat(), c.getGroupsCount(), c.getTeamsPerGroup(),
             c.getQualifiedPerGroup(), c.getMatchesType(), c.getStatus(),
-            c.getGenerationSession() != null ? c.getGenerationSession().getId() : null);
+            c.getGenerationSession() != null ? c.getGenerationSession().getId() : null,
+            c.getDefaultSetsToWin());
   }
 
   private ChampionshipSummary mapToSummary(Championship c) {

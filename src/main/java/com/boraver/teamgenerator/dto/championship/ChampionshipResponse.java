@@ -16,5 +16,6 @@ public record ChampionshipResponse(
     Integer qualifiedPerGroup,
     String matchesType, // se aplicável
     String status,
-    UUID generationSessionId
+    UUID generationSessionId,
+    int defaultSetsToWin
 ) {}

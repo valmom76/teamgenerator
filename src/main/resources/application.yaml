@@ -54,6 +54,7 @@ app:
     jwt-secret: ${JWT_SECRET}
     jwt-expiration-ms: 86400000
   upload-dir: ${APP_UPLOAD_DIR:/app/uploads}
+  frontend-url: https://rando.esp.br
 asaas:
   api-key: ${ASAAS_API_KEY}
   environment: ${ASAAS_ENV}
