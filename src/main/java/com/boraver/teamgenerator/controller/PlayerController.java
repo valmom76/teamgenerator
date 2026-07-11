@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.naming.LimitExceededException;
 import java.util.*;
 
 @RestController
@@ -24,7 +25,7 @@ public class PlayerController {
 
   @Operation(summary = "Cadastrar novo jogador")
   @PostMapping
-  public PlayerResponse create(@Valid @RequestBody CreatePlayerRequest req) {
+  public PlayerResponse create(@Valid @RequestBody CreatePlayerRequest req) throws LimitExceededException {
     return playerService.create(req);
   }
 

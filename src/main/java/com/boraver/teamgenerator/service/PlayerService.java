@@ -16,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.naming.LimitExceededException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -31,6 +32,7 @@ public class PlayerService {
   private final PlayerPositionRepository playerPositionRepository;
   private final PositionService positionService;
   private final SkillRepository skillRepository;
+  private final PlanLimitService planLimitService;
 
   private UUID tenantId() {
     return UUID.fromString(Objects.requireNonNull(TenantContext.getTenantId(), "tenant missing"));
@@ -40,6 +42,7 @@ public class PlayerService {
   public PlayerResponse create(CreatePlayerRequest req) {
     UUID tenant = tenantId();
     String name = req.name().trim();
+    planLimitService.checkPlayerLimit(tenant);
 
     if (playerRepository.findByTenantIdAndNameIgnoreCase(tenant, name).isPresent()) {
       throw new IllegalArgumentException("Já existe um jogador com o nome '" + name + "'");

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.boraver.teamgenerator.exception.LimitExceededException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -65,6 +66,22 @@ public class ApiExceptionHandler {
         body.put("error", Objects.toString(ex.getMessage(), "Erro interno do servidor"));
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
+
+    @ExceptionHandler(LimitExceededException.class)
+    public ResponseEntity<?> handleLimitExceeded(
+            LimitExceededException ex,
+            HttpServletRequest request
+    ) {
+        if (isSseRequest(request)) {
+            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).build();
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", Objects.toString(ex.getMessage(), "Limite excedido"));
+
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED) // 402
+                .body(body);
     }
 
     private boolean isSseRequest(HttpServletRequest request) {
